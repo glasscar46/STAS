@@ -1,0 +1,7 @@
+database-name: 'stas'
+connection-string: 'mongodb://localhost:27017'
+max-iterations: ''
+sample-size: 100
+sampleClass: 'SequenceToSequenceSample'
+modelName: ''
+Selector: 'RandomSampleSelector'

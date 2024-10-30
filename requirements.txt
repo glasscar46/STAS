@@ -1,0 +1,4 @@
+pymongo
+st-annotated-text
+pyyaml
+pandas
