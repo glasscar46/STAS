@@ -16,6 +16,7 @@ class ConfigLoader:
         try:
             with open(self.config_file, 'r') as file:
                 self.config = yaml.safe_load(file)
+            print('Config Loaded', self.config)
         except FileNotFoundError:
             raise Exception(f"Config file {self.config_file} not found.")
         except yaml.YAMLError as exc:

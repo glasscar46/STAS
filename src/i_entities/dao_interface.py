@@ -29,6 +29,10 @@ class IDAO():
         raise NotImplementedError
 
     @abc.abstractmethod
+    def saveSampleAnnotation(self, sample: ISample):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def saveSamples(self, samples: List[ISample]):
         raise NotImplementedError
 
@@ -91,4 +95,9 @@ class IDAO():
     @abc.abstractmethod
     def getIterationEvals(self, iteration_id: Any)-> List[IAnnotation]:
         """Returns the annotations made in the iteration."""
+        raise NotImplementedError
+    
+    @abc.abstractmethod
+    def setup_database(self, annotator: Annotator):
+        """Sets up the master user."""
         raise NotImplementedError

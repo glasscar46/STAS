@@ -5,5 +5,5 @@ class Annotator(Serializable):
 
     def __init__(self, email: str, password: str, id: Any = None) -> None:
         self.id = id
-        self._email = email
-        self._password = password
+        self.email = email
+        self.password = password

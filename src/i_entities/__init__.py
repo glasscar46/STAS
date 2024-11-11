@@ -7,3 +7,4 @@ from .sample_interface import ISample
 from .metric_interface import IMetric
 from .sample_selection_interface import ISampleSelector
 from .model_interface import IModel
+from .logger import log_method

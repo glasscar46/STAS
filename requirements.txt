@@ -1,4 +1,5 @@
 pymongo
 st-annotated-text
+streamlit-option-menu
 pyyaml
 pandas
