@@ -1,5 +1,6 @@
 import abc
 import copy
+import io
 from typing import Any, List
 from .sample_interface import ISample
 
@@ -39,6 +40,16 @@ class IModel(metaclass=abc.ABCMeta):
         new_object.id = None
         return new_object
 
+    def load(self, model_bytes:io.BytesIO):
+        """Loads the model from BytesIO buffer."""
+        raise NotImplementedError
+    
+    def save(self) -> io.BytesIO:
+        """
+        Save the model to a BytesIO buffer.
+        """
+        raise NotImplementedError
+
     @abc.abstractmethod
     def finetune(self, samples: List[ISample]):
         """
@@ -61,7 +72,7 @@ class IModel(metaclass=abc.ABCMeta):
         raise NotImplementedError
     
     @abc.abstractmethod
-    def generateAnnotation(self, samples: List[ISample]) -> List[ISample]:
+    def generateAnnotation(self, samples: List[ISample], iteration_id: Any) -> List[ISample]:
         """
         Generates annotations for the provided samples.
 
@@ -74,6 +85,7 @@ class IModel(metaclass=abc.ABCMeta):
             samples (List[ISample]): A list of samples for which annotations 
                                       need to be generated. Each sample should 
                                       implement the `ISample` interface.
+            iteration_id (Any): The identifier of the iteration in which the annotations were being generated.
 
         Returns:
             List[ISample]: A list of samples with generated annotations.
