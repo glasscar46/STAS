@@ -3,3 +3,6 @@ st-annotated-text
 streamlit-option-menu
 pyyaml
 pandas
+pyjwt
+bcrypt
+spacy

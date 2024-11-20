@@ -1,18 +1,23 @@
+import threading
 import streamlit as st
 import json
 import random
 import re
-from dao import MongoDAO
 import pandas
+import datetime
+import jwt
+import bcrypt
 from annotated_text import annotated_text
 from streamlit_option_menu import option_menu
 from i_entities import Annotator
+from i_entities import ISample
 from utils.loader import DatasetLoader
 from utils.config_loader import ConfigLoader
-from i_entities import ISample
 from annotation import SequenceLabelAnnotation
 from annotation import ClassificationAnnotation
 from sample import SampleFactory
+from model import ModelFactory
+from dao import MongoDAO
 from api.controller import AnnotationController
 
 
@@ -21,24 +26,57 @@ class Application():
     Main application class for managing the annotation process, user authentication, 
     visualization of annotations, and dataset upload in the Streamlit interface.
     """
+    SECRET_KEY = None
     
     def __init__(self):
         """
         Initializes the application, loads the configuration, sets up database connections, 
         and prepares the annotation controller.
         """
-        print('Loading config')
         self.config = ConfigLoader('config.yaml')  # Load configuration from a YAML file
         self.dao = MongoDAO(self.config.get('connection-string'), self.config.get('database-name'))  # Database connection
-        self.controller = AnnotationController(None, self.dao, self.config)  # Annotation controller
+        self.dao.set_sample_class(SampleFactory(self.config).get_sample())
+        model = ModelFactory(self.config).get_model()
+        self.controller = AnnotationController(model(), self.dao, self.config)  # Annotation controller
+        self.SECRET_KEY = self.config.get('secret-key')
         self.setup()  # Set up the database
         
     def setup(self):
         """
         Sets up the database using the master annotator credentials from the configuration.
         """
-        annotator = Annotator(self.config.get('master-email'), self.config.get('master-password'))
+        annotator = Annotator(self.config.get('master-email'), self.hash_password(self.config.get('master-password')))
         self.dao.setup_database(annotator)  # Initializes database with the master annotator
+
+    def create_user(self, username, password):
+        hashed_password = self.hash_password(password)
+        annotator= Annotator(username, hashed_password)
+        self.dao.saveAnnotator(annotator)
+
+    def generate_jwt(self, user_id):
+        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=3)
+        payload = {
+            "user_id": user_id,
+            "exp": expiration
+        }
+        token = jwt.encode(payload, self.SECRET_KEY, algorithm="HS256")
+        return token
+
+    def verify_jwt(self, token):
+        try:
+            decoded = jwt.decode(token, self.SECRET_KEY, algorithms=["HS256"])
+            return decoded
+        except jwt.ExpiredSignatureError:
+            return None
+        except jwt.InvalidTokenError:
+            return None
+
+    def hash_password(self, password: str):
+        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+
+    def verify_password(self, stored_hash, password: str):
+        return bcrypt.checkpw(password.encode('utf-8'), stored_hash)
 
     def login(self, username, password):
         """
@@ -51,11 +89,11 @@ class Application():
         Returns:
             bool: True if login is successful, False otherwise.
         """
-        annotator = Annotator(username, password)
-        if self.dao.login(annotator):
-            st.session_state.user = annotator  # Store the user in the session state
-            return True
-        return False
+        annotator = self.dao.login(username)
+        if annotator and self.verify_password(annotator.password, password):
+            token = self.generate_jwt(str(annotator.email))
+            return token, annotator
+        return None, None
 
     def logout(self):
         """
@@ -64,10 +102,9 @@ class Application():
         Returns:
             bool: True if logout is successful, False otherwise.
         """
-        if self.dao.logout(st.session_state.user):
-            st.session_state.user = None  # Clear the user from session state
-            return True
-        return False
+        st.session_state.user = None  # Clear the user from session state
+        st.session_state.jwt_token = None
+        return True
 
     def visualize_sequence_labels(self, text, annotations, title):
         """
@@ -88,7 +125,7 @@ class Application():
                 display_text.append(text[current_index:start])
             
             # Add the annotation (text[start:end], label)
-            display_text.append((text[start:end+1], label))
+            display_text.append((text[start:end], label))
             current_index = end  # Update the current index
         
         # Add remaining plain text after the last annotation
@@ -139,14 +176,14 @@ class Application():
         if self.controller.current_iteration is None:
             return None
         
-        samples = self.dao.getPendingSamples(self.controller.current_iteration.id)
+        samples = self.dao.getPendingAnnotation(self.controller.current_iteration._id)
         
         if not samples:
             return None
         
         return random.choice(samples)
 
-    def validate_annotation(self, annotation, is_accepted):
+    def validate_annotation(self, annotation:ISample, is_accepted):
         """
         Validates an annotation (accepts or rejects it).
 
@@ -157,6 +194,7 @@ class Application():
         Returns:
             bool: True if the annotation was successfully validated, False otherwise.
         """
+        annotation.labels.annotator = st.session_state.user._id
         self.controller.validate_annotation(annotation, is_accepted)
         return True
 
@@ -178,26 +216,29 @@ class Application():
         """
         Fetches and displays pending annotations along with options to accept or reject them.
         """
-        # Fetch a sample from the database (for testing purposes, using hardcoded index)
-        annotation = SampleFactory(self.config).get_sample().deserialize(self.dao.get_collection('Sample').find({}).to_list()[3])
-        
-        if annotation:
-            self.show_annotation(annotation)  # Show the annotation sample
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button(f"Accept"):
-                    if self.validate_annotation(annotation, True):
-                        st.success("Validation submitted successfully!")
-                    else:
-                        st.error("Failed to submit validation.")
-            with col2:
-                if st.button(f"Reject"):
-                    if self.validate_annotation(annotation, False):
-                        st.success("Validation submitted successfully!")
-                    else:
-                        st.error("Failed to submit validation.")
+        if self.controller.current_iteration:
+            # Fetch a sample from the database (for testing purposes, using hardcoded index)
+            annotation = self.dao.getPendingAnnotation(self.controller.current_iteration._id)
+            if annotation:
+                self.show_annotation(annotation)  # Show the annotation sample
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button(f"Accept"):
+                        if self.validate_annotation(annotation, True):
+                            st.success("Validation submitted successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to submit validation.")
+                with col2:
+                    if st.button(f"Reject"):
+                        if self.validate_annotation(annotation, False):
+                            st.success("Validation submitted successfully!")
+                        else:
+                            st.error("Failed to submit validation.")
+            else:
+                st.toast('There are no pending Annotations in this iteration.')
         else:
-            st.toast('There are no pending Annotations in this iteration.')
+            st.toast('There is no ongoing process.')
 
     def upload_document(self, uploaded_file, annotated=False):
         """
@@ -228,16 +269,13 @@ class Application():
         Main method that runs the Streamlit app, including user login, sidebar navigation,
         and page display for managing the process, validating annotations, and uploading datasets.
         """
-        if 'user' not in st.session_state:
-            st.session_state.user = None
-        # Initialize session state
-        if 'user' not in st.session_state:
+        if "jwt_token" not in st.session_state:
             st.session_state.user = None
 
         # Sidebar for navigation
         options=["Manage Process", "Annotation Validation", "Upload Dataset", "Logout"]
         icons=["gear", "check2-square", "cloud-upload", "box-arrow-right"]
-        if st.session_state.user is None:
+        if st.session_state.user is None or not self.verify_jwt(st.session_state.jwt_token):
             options = ["Login"]
             icons = ["box-arrow-left"]
         with st.sidebar:
@@ -262,20 +300,42 @@ class Application():
 
         # Login Page
         if page == "Login":
-            st.title("Login")
-            username = st.text_input("Username")
-            password = st.text_input("Password", type='password')
-            if st.button("Login"):
-                if self.login(username, password):
-                    st.success("Logged in successfully!")
-                    page = "Upload Dataset"
-                    st.rerun()
-                else:
-                    st.error("Login failed!")
+        # Login or Register
+            choice = st.radio("Choose an option", ["Login", "Register"])
+
+            if choice == "Login":
+                username = st.text_input("Username")
+                password = st.text_input("Password", type="password")
+
+                if st.button("Login"):
+                    token , annotator = self.login(username, password)
+                    if token:
+                        st.session_state["jwt_token"] = token
+                        st.session_state['user'] = annotator
+                        st.rerun()
+                    else:
+                        st.error("Invalid credentials")
+
+            elif choice == "Register":
+                username = st.text_input("Username")
+                password = st.text_input("Password", type="password")
+                confirm_password = st.text_input("Confirm Password", type="password")
+
+                if password != confirm_password:
+                    st.error("Passwords do not match")
+
+                if st.button("Register"):
+                    if self.dao.login(username):
+                        st.error("Username already exists")
+                    else:
+                        self.create_user(username, password)
+                        st.success("User registered successfully! Please log in.")
 
         if page == "Manage Process":
             if st.button('Start Iterative Process'):
-                pass
+                with st.spinner("Starting Iterative Process, please wait..."):
+                    self.controller.run_process()
+                    st.success(threading.enumerate())
             if st.button('Restart Iterative Process'):
                 pass
             # dashboard showing the current iteration details(number of samples, status, number of pending validations)
