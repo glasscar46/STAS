@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, List
 from .serializable import Serializable
+from .iteration_state import IterationState
 
 class Iteration(Serializable):
     """
@@ -18,13 +19,13 @@ class Iteration(Serializable):
             model_id (Any): The ID of the model used during this iteration.
             sample_ids (List[Any]): A list of IDs for the samples involved in this iteration.
         """
-        self.id: Any = None  # The unique identifier of the iteration (set when the iteration is saved).
+        self._id: Any = None  # The unique identifier of the iteration (set when the iteration is saved).
         self.position = position  # The iteration's position in the process.
         self.start_time: datetime = datetime.now()  # The timestamp when the iteration started.
         self.end_time: datetime = None  # The timestamp when the iteration ended (set after completion).
         self.model_id: Any = model_id  # The ID of the model used in this iteration.
         self.sample_ids: List[Any] = sample_ids  # The list of sample IDs processed during this iteration.
-        self.status: str = "INITIALIZED"  # The status of the iteration (e.g., "INITIALIZED", "COMPLETED").
+        self.status = IterationState.INITIALIZED  # The status of the iteration.
 
     @classmethod
     def deserialize(cls, data: dict):
@@ -38,8 +39,10 @@ class Iteration(Serializable):
         Returns:
             Iteration: A new Iteration object created from the dictionary data.
         """
+        if not data:
+            return None
         obj = cls.__new__(cls)  # Create an empty instance without calling __init__.
-        obj.id = data.get('id')  # Set the ID of the iteration.
+        obj._id = data.get('_id')  # Set the ID of the iteration.
         obj.position = data.get('position')  # Set the position of the iteration.
         obj.start_time = data.get('start_time')  # Set the start time of the iteration.
         obj.end_time = data.get('end_time')  # Set the end time of the iteration.

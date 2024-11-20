@@ -45,6 +45,8 @@ class Serializable(metaclass=abc.ABCMeta):
         Returns:
             Serializable: An instance of the class with attributes populated from the dictionary.
         """
+        if data is None:
+            return None
         obj = cls.__new__(cls)  # Create an instance without calling __init__
         for key, value in data.items():
             attr = getattr(cls, key, None)

@@ -14,7 +14,7 @@ class IMetric(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def evaluate(self, samples: List[ISample]) -> Any:
+    def evaluate(self, samples: List[ISample], true_samples: List[ISample]) -> Any:
         """
         Evaluates the annotation process based on the provided list of samples.
         

@@ -31,4 +31,6 @@ class RandomSampleSelector(ISampleSelector):
             list: A list of randomly selected samples from the pool of pending samples.
         """
         samples = self.dao.getPendingSamples()
+        if len(samples)<= sample_size:
+            return samples
         return Random().choices(samples, k=sample_size)

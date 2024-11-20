@@ -1,5 +1,5 @@
 from .annotation_interface import IAnnotation
-from .annotator_ import Annotator
+from .annotator import Annotator
 from .dao_interface import IDAO
 from .iteration import Iteration
 from .stop_condition_interface import IStopCondition
@@ -7,4 +7,6 @@ from .sample_interface import ISample
 from .metric_interface import IMetric
 from .sample_selection_interface import ISampleSelector
 from .model_interface import IModel
+from .iteration_state import IterationState
+from .experiment import Experiment
 from .logger import log_method

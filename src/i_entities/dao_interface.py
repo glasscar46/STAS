@@ -1,10 +1,11 @@
 import abc
-from typing import Any, List
+from typing import Any, List, Type
+from .experiment import Experiment
 from .iteration import Iteration
 from .model_interface import IModel
 from .sample_interface import ISample
 from .annotation_interface import IAnnotation
-from .annotator_ import Annotator
+from .annotator import Annotator
 
 
 class IDAO():
@@ -14,10 +15,12 @@ class IDAO():
         self.database_name = database_name
         self.connect()
 
+    @classmethod
+    def set_sample_class(cls, type: Type[ISample]):
+        cls.sample_class = type
+
     @property
     def connection_string(self):
-        
-        
         return self._connection_string
 
     @abc.abstractmethod
@@ -49,6 +52,12 @@ class IDAO():
         raise NotImplementedError
     
     @abc.abstractmethod
+    def getGoldenSamples(self,tuggle:bool=True) -> List[ISample]:
+        """"Returns the golden set when tuggle is True. When tuggle is False,
+        it returns all samples not part of the golden sample but have been validated"""
+        raise NotImplementedError
+    
+    @abc.abstractmethod
     def getPendingAnnotation(self, iteration_id: Any) -> List[ISample]:
         raise NotImplementedError
 
@@ -65,15 +74,16 @@ class IDAO():
         raise NotImplementedError
 
     @abc.abstractmethod
-    def login(self, annotator: Annotator)-> Annotator:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def logout(self, annotator: Annotator):
+    def login(self, email: str)-> Annotator:
         raise NotImplementedError
     
     @abc.abstractmethod
     def saveModel(self, model: IModel) -> Any:
+        """Saves a model and returns its identifier"""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def loadModel(self, model_class: Type[IModel], model_id: Any) -> IModel:
         """Saves a model and returns its identifier"""
         raise NotImplementedError
 
@@ -93,8 +103,18 @@ class IDAO():
         raise NotImplementedError
     
     @abc.abstractmethod
-    def getIterationEvals(self, iteration_id: Any)-> List[IAnnotation]:
+    def getIterationAnnotations(self, iteration_id: Any)-> List[IAnnotation]:
         """Returns the annotations made in the iteration."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def saveExperiment(self, experiment: Experiment):
+        """Saves an Experiment."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def getExperiment(self)-> Experiment:
+        """Returns the last saved Experiment."""
         raise NotImplementedError
     
     @abc.abstractmethod

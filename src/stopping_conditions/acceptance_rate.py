@@ -38,7 +38,7 @@ class AcceptanceRateCondition(IStopCondition):
             raise ValueError('threshold parameter not set for AcceptanceRateCondition')
 
         # Retrieve all evaluation annotations for the given iteration
-        evals: List[IAnnotation] = self.dao.getIterationEvals(iteration_id)
+        evals: List[IAnnotation] = self.dao.getIterationAnnotations(iteration_id)
         
         # Calculate the number of accepted annotations (valid ones)
         accepted = [item for item in evals if item.is_valid]
