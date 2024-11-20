@@ -10,7 +10,7 @@ class IAnnotation(Serializable, metaclass=abc.ABCMeta):
     for storing and managing annotations within the system.
     """
 
-    def __init__(self, sample_id: Any, label: Any, annotator_id: Any = None, iteration_id: Any = None, is_valid: bool = False) -> None:
+    def __init__(self, sample_id: Any, label: Any, annotator_id: Any = None, iteration_id: Any = None, is_valid: bool = None) -> None:
         """
         Initializes an annotation object with the provided details.
 
@@ -47,7 +47,7 @@ class IAnnotation(Serializable, metaclass=abc.ABCMeta):
         # If the data is a dictionary, populate the fields of the annotation object.
         if isinstance(data, dict):
             obj._id = data.get('_id', None)
-            obj.is_valid = data.get('is_valid', False)
+            obj.is_valid = data.get('is_valid', None)
             obj.iteration = data.get('iteration')
             obj.annotator = data.get('annotator')
             obj.label = data.get('label')

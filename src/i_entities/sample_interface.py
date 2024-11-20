@@ -24,6 +24,7 @@ class ISample(Serializable, metaclass=abc.ABCMeta):
         self.labels: IAnnotation = None  # Holds the annotation(s) for this sample
         self.validated: bool = False     # Flag to indicate whether the sample has been validated
         self._id = None                  # Unique identifier for the sample (to be set later)
+        self.gold_set = False
 
     @classmethod
     @abc.abstractmethod
@@ -59,10 +60,13 @@ class ISample(Serializable, metaclass=abc.ABCMeta):
         Returns:
             ISample: An instance of the sample class, with the attributes set based on the provided data.
         """
+        if data is None:
+            return None
         obj = cls.__new__(cls)  # Create a new instance without calling __init__
         obj._id = data.get('_id')
         obj.validated = data.get('validated', False)
         obj.text = data.get('text', '')
+        obj.gold_set = data.get('gold_set', False)
         # Deserialize the labels using the appropriate annotation class
-        obj.labels = cls.get_annotation_class().deserialize(data.get('labels'))
+        obj.labels = cls.get_annotation_class().deserialize(data.get('labels',{}))
         return obj

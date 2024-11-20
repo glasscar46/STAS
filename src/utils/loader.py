@@ -104,12 +104,13 @@ class DatasetLoader:
             ISample: An instance of the provided `sample_class` populated with the data.
         """
         sample = self.sample_class.deserialize(data)
-        sample._id = data.get('id')
         if self.annotated:
             sample.validated = True
             sample.labels.is_valid = True
+            sample.gold_set = True
         else:
             sample.labels = None
+            sample.gold_set = False
         return sample
 
     def get_samples(self):
