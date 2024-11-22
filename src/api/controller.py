@@ -96,6 +96,7 @@ class AnnotationController:
         This method is responsible for beginning the iterative annotation process.
         """
         print('Process Initialized')
+        self._dao.saveExperiment(Experiment(None,0))
         threading.Thread(target=self.run_in_background, args=(self.run_iterative_process,), name='Process thread').start()
 
     async def finalize_process(self):

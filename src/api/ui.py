@@ -331,14 +331,38 @@ class Application():
                         self.create_user(username, password)
                         st.success("User registered successfully! Please log in.")
 
-        if page == "Manage Process":
-            if st.button('Start Iterative Process'):
-                with st.spinner("Starting Iterative Process, please wait..."):
-                    self.controller.run_process()
-                    st.success(threading.enumerate())
-            if st.button('Restart Iterative Process'):
-                pass
-            # dashboard showing the current iteration details(number of samples, status, number of pending validations)
+        elif page == "Manage Process":
+            # Check if the current iteration is available
+            if not self.controller.current_iteration:
+                if st.button('Start Iterative Process'):
+                    with st.spinner("Starting Iterative Process, please wait..."):
+                        self.controller.run_process()
+            else:
+                # Current iteration is available
+                iteration = self.controller.current_iteration
+
+                # Display the current iteration details with aesthetic formatting
+                st.header("Current Iteration Details")
+
+                # Display basic iteration information
+                st.subheader(f"Iteration {iteration.position}")
+                st.write(f"**Model ID**: {iteration.model_id}")
+                st.write(f"**Start Time**: {iteration.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                
+                if iteration.end_time:
+                    st.write(f"**End Time**: {iteration.end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                else:
+                    st.write("**End Time**: In Progress...")
+                st.write(f"**Status**: {iteration.status}")
+                
+                # Show number of samples
+                st.write(f"**Number of Samples Processed**: {len(iteration.sample_ids)}")
+
+                # Optionally, show a more detailed breakdown with a list of sample IDs if needed
+                if st.checkbox('Show Sample IDs'):
+                    st.write("Sample IDs in this iteration:")
+                    st.write(iteration.sample_ids)
+
 
 
         # Annotation Validation Page

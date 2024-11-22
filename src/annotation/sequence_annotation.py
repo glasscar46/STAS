@@ -29,7 +29,7 @@ class SequenceLabelAnnotation(IAnnotation):
             (start_index, end_index, label).
     """
     
-    def __init__(self, sample_id: Any, labels: List[Tuple[int, int, str]], annotator_id: Any = None, iteration_id: Any = None, is_valid: bool = False):
+    def __init__(self, sample_id: Any, labels: List[Tuple[int, int, str]], annotator_id: Any = None, iteration_id: Any = None, is_valid: bool = None):
         """
         Initializes a SequenceLabelAnnotation object with the given parameters.
 
@@ -42,7 +42,7 @@ class SequenceLabelAnnotation(IAnnotation):
                                                  - `label` (str): The label for the span (e.g., "PERSON").
             annotator_id (Any, optional): The ID of the annotator. Defaults to None.
             iteration_id (Any, optional): The ID of the iteration in which the annotation was made. Defaults to None.
-            is_valid (bool): A flag indicating whether the annotation is valid. Defaults to False.
+            is_valid (bool): A flag indicating whether the annotation is valid. Defaults to None.
         """
         super().__init__(sample_id, labels, annotator_id, iteration_id, is_valid)
         self.label: List[Tuple[int, int, str]] = labels
