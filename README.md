@@ -165,8 +165,8 @@ The **Streamlit GUI** serves as the front-end interface for users (annotators, a
 ### Features of the Streamlit UI
 
 - **Login Page**: Allows annotators to log in using their credentials.
-- **Dashboard**: After logging in, users are presented with a dashboard where they can:
-  - Start or restart the annotation process.
+- **Manage Process**: After logging in, users are presented with a dashboard where they can:
+  - Start the annotation process.
   - View the current iteration details, such as the number of pending samples and the status of the process.
 - **Annotation Validation**: Users can view and validate annotations (accept or reject them). Annotations are displayed based on their type (e.g., sequence labeling or classification).
 - **Dataset Upload**: Annotators can upload new datasets in CSV or JSON format and save them to the database. The dataset can be marked as annotated or unannotated.
