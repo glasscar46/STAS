@@ -37,6 +37,7 @@ To install and use the annotation system, follow these steps:
 1. **Clone the repository**:
 
    ```bash
+   
    git clone https://github.com/glasscar46/stas.git
    cd stas
    ```
@@ -68,7 +69,7 @@ To install and use the annotation system, follow these steps:
 To run the Streamlit web interface, use the following command:
 
 ```bash
-streamlit run app.py
+streamlit run api/ui.py
 ```
 
 This will start the Streamlit app and open it in your browser, where you can interact with the system. The GUI allows you to log in, view annotations, validate them, and upload datasets directly.
@@ -80,16 +81,18 @@ The system can be configured through a `config.yaml` file. The configuration inc
 Here’s an example of the configuration:
 
 ```yaml
-max-iteration: 10
+database-name: 'stas'
+connection-string: 'mongodb://localhost:27017'
+max-iterations: 10
 sample-size: 100
-stopping-conditions:
-  - type: AcceptanceRateCondition
-    params:
-      threshold: 0.9
-sampleClass: TextClassificationSample
-Selector: RandomSampleSelector
-database-name: your-database
-connection-string: your-connection-string
+sampleClass: 'SequenceToSequenceSample'
+modelName: 'NERModel'
+Selector: 'RandomSampleSelector'
+master-email: 'admin@email.com'
+master-password: 'admin@email.com'
+secret-key: 'example-secretkey'
+metrics: 
+  - None
 ```
 
 ### Authentication and User Roles
